@@ -4,7 +4,7 @@ const app = express();
 //  req handler
 app.use((req, res) => {
   if (req.url === "/hello") {
-    res.send("asad malla asad noob hello ehy");
+    res.send("asad malla asad noob hello ");
   } else {
     res.send("asad malla");
   }
