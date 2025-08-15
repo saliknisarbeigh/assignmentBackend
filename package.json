@@ -1,0 +1,21 @@
+{
+  "name": "dev-backend",
+  "version": "1.0.0",
+  "description": "\"hello world\"",
+  "main": "index.js",
+  "scripts": {
+    "start":"src/app.js",
+   "dev":"nodemon src/app.js"
+  },
+  "keywords": [
+    "node",
+    "js",
+    "javaScript",
+    "backend"
+  ],
+  "author": "salik",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
