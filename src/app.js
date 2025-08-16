@@ -1,15 +1,16 @@
 const express = require("express");
 const app = express();
-
-//  req handler
-app.use((req, res) => {
-  if (req.url === "/hello") {
-    res.send("asad malla asad noob hello ");
-  } else {
-    res.send("asad malla");
+app.use(
+  "/user",
+  (req, res, next) => {
+    next();
+    res.send("hey im the first router handler");
+  },
+  (req, res) => {
+    res.send("hey im the second route handler");
   }
-});
+);
 
-app.listen(3000, () => {
-  console.log("waiting for you at port 3000...");
+app.listen(7777, () => {
+  console.log("server created successfully");
 });
