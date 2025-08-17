@@ -1,16 +1,16 @@
 const express = require("express");
 const app = express();
-app.use(
-  "/user",
-  (req, res, next) => {
-    next();
-    res.send("hey im the first router handler");
-  },
-  (req, res) => {
-    res.send("hey im the second route handler");
-  }
-);
+const connectDb = require("./config/dataBase");
 
-app.listen(7777, () => {
-  console.log("server created successfully at port 7777");
-});
+connectDb()
+  .then(() => {
+    console.log(" dataBase connection successful");
+    app.listen(3000, () => {
+      console.log("server successfully running on port 3000");
+    });
+  })
+  .catch((err) => {
+    console.log(err, "failed");
+  });
+//  mongoose doc
+// schemas doc
