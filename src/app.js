@@ -4,6 +4,7 @@ const connectDb = require("./config/dataBase");
 const User = require("./models/user");
 const bcrypt = require("bcrypt");
 const { validateSignUpData } = require("./utils/validation");
+const validator = require("validator");
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
@@ -37,9 +38,31 @@ app.post("/signup", async (req, res) => {
   });
   try {
     await user.save();
-    res.send("user added");
+    res.status(201).send("User created successfully.");
   } catch (err) {
-    res.status(400).send("ERROR : " + err.message);
+    res.status(400).send("Signup failed: " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+
+    if (validator.isEmail(emailId)) {
+      const user = await User.findOne({ emailId: emailId });
+
+      if (!user) {
+        throw new Error("email not found in DB");
+      }
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (isPasswordValid) {
+        res.status(200).send("Login successful.");
+      } else {
+        throw new Error("password is incorrect");
+      }
+    }
+  } catch (err) {
+    res.status(401).send("Login failed: " + err.message);
   }
 });
 
@@ -49,12 +72,12 @@ app.post("/getUserDetails", async (req, res) => {
     const userById = await User.findById(userId);
 
     if (!userById) {
-      return res.status(404).send("User not found");
+      return res.status(404).send("User not found.");
     }
 
-    res.send(userById);
+    res.status(200).send(userById);
   } catch (err) {
-    res.status(400).send("something went wrong: " + err.message);
+    res.status(500).send("Failed to get user details: " + err.message);
   }
 });
 
@@ -65,12 +88,12 @@ app.use("/user", async (req, res) => {
     const user = await User.find({ emailId: userEmailId });
 
     if (user.length === 0) {
-      res.status(404).send("user not found");
+      res.status(404).send("User not found.");
     } else {
-      res.send(user);
+      res.status(200).send(user);
     }
   } catch (err) {
-    res.status(400).send("something went wrong");
+    res.status(500).send("Failed to get user: " + err.message);
   }
 });
 
@@ -80,12 +103,12 @@ app.get("/feed", async (req, res) => {
     const user = await User.find({ emailId: userEmailId });
 
     if (user.length === 0) {
-      res.status(404).send("user not found");
+      res.status(404).send("User not found.");
     } else {
-      res.send(user);
+      res.status(200).send(user);
     }
   } catch (err) {
-    res.status(400).send("something went wrong");
+    res.status(500).send("Failed to get feed: " + err.message);
   }
 });
 
@@ -94,10 +117,10 @@ app.delete("/delete", async (req, res) => {
     const userId = "68a2c18035a827cf3d78146d";
 
     const user = await User.findByIdAndDelete(userId);
-    res.send("deleted successfully");
+    res.status(200).send("User deleted successfully.");
     console.log(user);
   } catch (err) {
-    res.status(400).send("practice karle laadle");
+    res.status(500).send("Delete failed: " + err.message);
   }
 });
 
@@ -131,10 +154,10 @@ app.patch("/update/:userId", async (req, res) => {
       runValidators: true,
     });
 
-    res.send("update successfully");
+    res.status(200).send("User updated successfully.");
     console.log(user);
   } catch (err) {
-    res.status(400).send("update failed: " + err.message);
+    res.status(500).send("Update failed: " + err.message);
   }
 });
 connectDb()

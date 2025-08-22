@@ -49,7 +49,9 @@ const UserSchema = new mongoose.Schema(
       type: String,
       validate(value) {
         if (!["male", "female", "others"].includes(value)) {
-          throw new Error("Gender data is not valid");
+          throw new Error(
+            "Gender must be 'male', 'female', or 'others'. Received: " + value
+          );
         }
       },
     },
@@ -59,7 +61,7 @@ const UserSchema = new mongoose.Schema(
         "https://static.vecteezy.com/system/resources/thumbnails/005/544/770/small/profile-icon-design-free-vector.jpg",
       validate(value) {
         if (!validator.isURL(value)) {
-          throw new Error("url is not valid" + value);
+          throw new Error("Photo URL is not valid: " + value);
         }
       },
     },
