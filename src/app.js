@@ -2,29 +2,45 @@ const express = require("express");
 const app = express();
 const connectDb = require("./config/dataBase");
 const User = require("./models/user");
-const { ReturnDocument } = require("mongodb");
+const bcrypt = require("bcrypt");
+const { validateSignUpData } = require("./utils/validation");
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-  console.log(req.body);
-  const user = new User(req.body);
+  validateSignUpData(req);
+  const { password } = req.body;
+  const passwordHash = await bcrypt.hash(password, 10);
+  console.log(passwordHash);
 
-  await user.save();
-  res.send("user added");
-});
-app.use("/check", async (req, res) => {
+  const user = new User(req.body);
   try {
-    const userById = await User.findById("68a1b8541480f319a18fcf4d");
-    res.send(userById);
+    await user.save();
+    res.send("user added");
   } catch (err) {
-    res.status(400).send("something went wrong");
+    res.status(400).send("ERROR : " + err.message);
   }
 });
+
+app.post("/getUserDetails", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const userById = await User.findById(userId);
+
+    if (!userById) {
+      return res.status(404).send("User not found");
+    }
+
+    res.send(userById);
+  } catch (err) {
+    res.status(400).send("something went wrong: " + err.message);
+  }
+});
+
 app.use("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
+  const userEmailId = req.body.emailId;
 
   try {
-    const user = await User.find({ email: userEmail });
+    const user = await User.find({ emailId: userEmailId });
 
     if (user.length === 0) {
       res.status(404).send("user not found");
@@ -38,7 +54,8 @@ app.use("/user", async (req, res) => {
 
 app.get("/feed", async (req, res) => {
   try {
-    const user = await User.find({ email: userEmail });
+    const userEmailId = req.body.emailId;
+    const user = await User.find({ emailId: userEmailId });
 
     if (user.length === 0) {
       res.status(404).send("user not found");
@@ -62,17 +79,38 @@ app.delete("/delete", async (req, res) => {
   }
 });
 
-app.patch("/update", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/update/:userId", async (req, res) => {
+  const userId = req.params?.userId;
   const data = req.body;
 
   try {
-    await User.findByIdAndUpdate({ _id: userId }, data, {
+    const ALLOWED_UPDATES = [
+      "photoUrl",
+      "about",
+      "gender",
+      "age",
+      "skills",
+      "password",
+      "firstName",
+      "lastName",
+    ];
+
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      ALLOWED_UPDATES.includes(k)
+    );
+    if (!isUpdateAllowed) {
+      throw new Error("update not allowed");
+    }
+    if (data?.skills.length > 10) {
+      throw new Error("skills cannot be more then 10");
+    }
+    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
       returnDocument: "after",
       runValidators: true,
     });
 
     res.send("update successfully");
+    console.log(user);
   } catch (err) {
     res.status(400).send("update failed: " + err.message);
   }
