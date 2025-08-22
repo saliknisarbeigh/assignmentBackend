@@ -7,12 +7,34 @@ const { validateSignUpData } = require("./utils/validation");
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
+  // validate data
   validateSignUpData(req);
-  const { password } = req.body;
+  const {
+    password,
+    firstName,
+    lastName,
+    emailId,
+    skills,
+    age,
+    gender,
+    photoUrl,
+    about,
+  } = req.body;
+  // hash password
   const passwordHash = await bcrypt.hash(password, 10);
   console.log(passwordHash);
-
-  const user = new User(req.body);
+  //  creating a new instance of new User model
+  const user = new User({
+    firstName,
+    lastName,
+    emailId,
+    password: passwordHash,
+    skills,
+    age,
+    gender,
+    photoUrl,
+    about,
+  });
   try {
     await user.save();
     res.send("user added");
