@@ -71,12 +71,12 @@ const UserSchema = new mongoose.Schema(
     },
     skills: {
       type: [String],
-      // validate: {
-      //   validator: function (val) {
-      //     return val.length <= 10;
-      //   },
-      //   message: "You can select at most 10 skills",
-      // },
+      validate: {
+        validator: function (val) {
+          return val.length <= 10;
+        },
+        message: "You can select at most 10 skills",
+      },
     },
   },
   {

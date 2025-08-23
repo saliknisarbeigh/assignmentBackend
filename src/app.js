@@ -5,8 +5,10 @@ const User = require("./models/user");
 const bcrypt = require("bcrypt");
 const { validateSignUpData } = require("./utils/validation");
 const validator = require("validator");
+const cookieParser = require("cookie-parser");
 app.use(express.json());
-
+app.use(cookieParser());
+const jwt = require("jsonwebtoken");
 app.post("/signup", async (req, res) => {
   // validate data
   validateSignUpData(req);
@@ -21,9 +23,14 @@ app.post("/signup", async (req, res) => {
     photoUrl,
     about,
   } = req.body;
+  const userAlreadyPresent = await User.findOne({ emailId: emailId });
+  if (userAlreadyPresent) {
+    return res.status(409).send("User with the same emailId  already exists.");
+  }
+
   // hash password
   const passwordHash = await bcrypt.hash(password, 10);
-  console.log(passwordHash);
+  // console.log(passwordHash);
   //  creating a new instance of new User model
   const user = new User({
     firstName,
@@ -52,17 +59,46 @@ app.post("/login", async (req, res) => {
       const user = await User.findOne({ emailId: emailId });
 
       if (!user) {
-        throw new Error("email not found in DB");
+        throw new Error("Login failed: Invalid credentials.");
       }
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (isPasswordValid) {
+        const token = await jwt.sign({ _id: user._id }, "pulse@511");
+        // console.log(token);
+        res.cookie("token", token);
+
         res.status(200).send("Login successful.");
       } else {
-        throw new Error("password is incorrect");
+        throw new Error("Login failed: Password is incorrect.");
       }
     }
   } catch (err) {
     res.status(401).send("Login failed: " + err.message);
+  }
+});
+
+app.get("/profile", async (req, res) => {
+  try {
+    const cookies = req.cookies;
+    const { token } = cookies;
+    if (!token) {
+      throw new Error("invalid token");
+    }
+    // validate token
+
+    const decodedMessage = await jwt.verify(token, "pulse@511");
+    // console.log(decodedMessage);
+    const { _id } = decodedMessage;
+    console.log("Logged in  user is : " + _id);
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new Error("user doesn't exist");
+    }
+
+    res.send(user);
+    // console.log(token);
+  } catch (err) {
+    res.status(401).send("Error: " + err.message);
   }
 });
 
@@ -118,7 +154,7 @@ app.delete("/delete", async (req, res) => {
 
     const user = await User.findByIdAndDelete(userId);
     res.status(200).send("User deleted successfully.");
-    console.log(user);
+    // console.log(user);
   } catch (err) {
     res.status(500).send("Delete failed: " + err.message);
   }
@@ -144,10 +180,15 @@ app.patch("/update/:userId", async (req, res) => {
       ALLOWED_UPDATES.includes(k)
     );
     if (!isUpdateAllowed) {
-      throw new Error("update not allowed");
+      throw new Error(
+        "Update not allowed: One or more fields are not permitted."
+      );
     }
-    if (data?.skills.length > 10) {
-      throw new Error("skills cannot be more then 10");
+    // if (data?.skills.length > 10) {
+    //   throw new Error("Update not allowed: Skills cannot be more than 10.");
+    // }
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
     }
     const user = await User.findByIdAndUpdate({ _id: userId }, data, {
       returnDocument: "after",
@@ -155,7 +196,7 @@ app.patch("/update/:userId", async (req, res) => {
     });
 
     res.status(200).send("User updated successfully.");
-    console.log(user);
+    // console.log(user);
   } catch (err) {
     res.status(500).send("Update failed: " + err.message);
   }
