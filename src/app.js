@@ -9,6 +9,9 @@ const cookieParser = require("cookie-parser");
 app.use(express.json());
 app.use(cookieParser());
 const jwt = require("jsonwebtoken");
+
+const { userAuth } = require("./middlewares/auth");
+
 app.post("/signup", async (req, res) => {
   // validate data
   validateSignUpData(req);
@@ -23,9 +26,13 @@ app.post("/signup", async (req, res) => {
     photoUrl,
     about,
   } = req.body;
-  const userAlreadyPresent = await User.findOne({ emailId: emailId });
-  if (userAlreadyPresent) {
+  const userEmailAlreadyPresent = await User.findOne({ emailId: emailId });
+  if (userEmailAlreadyPresent) {
     return res.status(409).send("User with the same emailId  already exists.");
+  }
+  const userNameAlreadyPresent = await User.findOne({ firstName: firstName });
+  if (userNameAlreadyPresent) {
+    return res.status(409).send("name is already taken ");
   }
 
   // hash password
@@ -61,11 +68,21 @@ app.post("/login", async (req, res) => {
       if (!user) {
         throw new Error("Login failed: Invalid credentials.");
       }
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await user.validatePassword(password); //offload  to mongo schema . UserSchema/userSchema methods  aka helper function will be good choice here/ reusable and clean
+      // const isPasswordValid = await bcrypt.compare(password, user.password); //
       if (isPasswordValid) {
-        const token = await jwt.sign({ _id: user._id }, "pulse@511");
+        // TODO write a good expire date for token and cookies
+
+        // const token = jwt.sign({ _id: user._id }, "pulse@511", {
+        //   expiresIn: "7d",
+        // });
+
+        const token = await user.getJWT(); //  offload token to mongo schema . UserSchema/userSchema methods  aka helper function will be good choice here/ reusable and clean
+
         // console.log(token);
-        res.cookie("token", token);
+        res.cookie("token", token, {
+          expires: new Date(Date.now() + 8 * 3600000),
+        }); // cookie will expire in 8 hrs
 
         res.status(200).send("Login successful.");
       } else {
@@ -77,130 +94,20 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const cookies = req.cookies;
-    const { token } = cookies;
-    if (!token) {
-      throw new Error("invalid token");
-    }
-    // validate token
-
-    const decodedMessage = await jwt.verify(token, "pulse@511");
-    // console.log(decodedMessage);
-    const { _id } = decodedMessage;
-    console.log("Logged in  user is : " + _id);
-    const user = await User.findById(_id);
-    if (!user) {
-      throw new Error("user doesn't exist");
-    }
-
+    const user = req.user;
     res.send(user);
-    // console.log(token);
   } catch (err) {
     res.status(401).send("Error: " + err.message);
   }
 });
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  const user = req.user;
 
-app.post("/getUserDetails", async (req, res) => {
-  try {
-    const userId = req.body.userId;
-    const userById = await User.findById(userId);
-
-    if (!userById) {
-      return res.status(404).send("User not found.");
-    }
-
-    res.status(200).send(userById);
-  } catch (err) {
-    res.status(500).send("Failed to get user details: " + err.message);
-  }
+  res.send(user.firstName + " sends you a connection request");
 });
 
-app.use("/user", async (req, res) => {
-  const userEmailId = req.body.emailId;
-
-  try {
-    const user = await User.find({ emailId: userEmailId });
-
-    if (user.length === 0) {
-      res.status(404).send("User not found.");
-    } else {
-      res.status(200).send(user);
-    }
-  } catch (err) {
-    res.status(500).send("Failed to get user: " + err.message);
-  }
-});
-
-app.get("/feed", async (req, res) => {
-  try {
-    const userEmailId = req.body.emailId;
-    const user = await User.find({ emailId: userEmailId });
-
-    if (user.length === 0) {
-      res.status(404).send("User not found.");
-    } else {
-      res.status(200).send(user);
-    }
-  } catch (err) {
-    res.status(500).send("Failed to get feed: " + err.message);
-  }
-});
-
-app.delete("/delete", async (req, res) => {
-  try {
-    const userId = "68a2c18035a827cf3d78146d";
-
-    const user = await User.findByIdAndDelete(userId);
-    res.status(200).send("User deleted successfully.");
-    // console.log(user);
-  } catch (err) {
-    res.status(500).send("Delete failed: " + err.message);
-  }
-});
-
-app.patch("/update/:userId", async (req, res) => {
-  const userId = req.params?.userId;
-  const data = req.body;
-
-  try {
-    const ALLOWED_UPDATES = [
-      "photoUrl",
-      "about",
-      "gender",
-      "age",
-      "skills",
-      "password",
-      "firstName",
-      "lastName",
-    ];
-
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-    if (!isUpdateAllowed) {
-      throw new Error(
-        "Update not allowed: One or more fields are not permitted."
-      );
-    }
-    // if (data?.skills.length > 10) {
-    //   throw new Error("Update not allowed: Skills cannot be more than 10.");
-    // }
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
-    }
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
-      returnDocument: "after",
-      runValidators: true,
-    });
-
-    res.status(200).send("User updated successfully.");
-    // console.log(user);
-  } catch (err) {
-    res.status(500).send("Update failed: " + err.message);
-  }
-});
 connectDb()
   .then(() => {
     console.log(" dataBase connection successful");
