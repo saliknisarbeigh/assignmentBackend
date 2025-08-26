@@ -80,6 +80,8 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 authRouter.post("/logout", async (req, res) => {
+  //TODO we can add some clean up activities
+
   res.cookie("token", null, {
     expires: new Date(Date.now()),
   });

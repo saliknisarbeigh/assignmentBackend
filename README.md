@@ -15,8 +15,8 @@ connectionRequestRouter
 <!-- right swipe=like -->
 <!-- left swipe=pass -->
 
--POST /request/send/like/:userId
--POST /request/send/pass/:userId
+-POST /request/send/interested/:userId
+-POST /request/send/ignored/:userId
 -POST /request/review/accepted/:requestId
 -POST /request/review/rejected/:requestId
 

@@ -49,13 +49,17 @@ const UserSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      validate(value) {
-        if (!["male", "female", "others"].includes(value)) {
-          throw new Error(
-            "Gender must be 'male', 'female', or 'others'. Received: " + value
-          );
-        }
+      enum: {
+        values: ["male", "female", "others"],
+        message: `{VALUE} is not a valid gender type`,
       },
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error(
+      //       "Gender must be 'male', 'female', or 'others'. Received: " + value
+      //     );
+      //   }
+      // },
     },
     photoUrl: {
       type: String,
@@ -70,9 +74,11 @@ const UserSchema = new mongoose.Schema(
     about: {
       type: String,
       default: "hey there this is a default value",
+      maxLength: 250,
     },
     skills: {
       type: [String],
+
       validate: {
         validator: function (val) {
           return val.length <= 10;
@@ -103,4 +109,6 @@ UserSchema.methods.validatePassword = async function (passwordInputByUser) {
   );
   return isPasswordValid;
 };
+// const UserModel=new mongoose.model("user",UserSchema)
+// module.exports=UserModel
 module.exports = mongoose.model("user", UserSchema);
