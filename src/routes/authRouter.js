@@ -74,6 +74,8 @@ authRouter.post("/login", async (req, res) => {
       } else {
         throw new Error("Login failed: Password is incorrect.");
       }
+    } else {
+      throw new Error("Login failed: Invalid email format.");
     }
   } catch (err) {
     res.status(401).send("Login failed: " + err.message);
