@@ -58,7 +58,7 @@ authRouter.post("/login", async (req, res) => {
       const user = await User.findOne({ emailId: emailId });
 
       if (!user) {
-        throw new Error("Login failed: Invalid credentials.");
+        throw new Error(" Invalid credentials.");
       }
       const isPasswordValid = await user.validatePassword(password); //offload  to mongo schema . UserSchema/userSchema methods  aka helper function will be good choice here/ reusable and clean
       // const isPasswordValid = await bcrypt.compare(password, user.password); //
@@ -75,10 +75,10 @@ authRouter.post("/login", async (req, res) => {
           user: user,
         });
       } else {
-        throw new Error("Login failed: Password is incorrect.");
+        throw new Error(" Invalid credentials.");
       }
     } else {
-      throw new Error("Login failed: Invalid email format.");
+      throw new Error(" Invalid credentials.");
     }
   } catch (err) {
     res.status(401).send("Login failed: " + err.message);

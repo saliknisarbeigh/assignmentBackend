@@ -4,7 +4,7 @@ const ConnectionRequestModel = require("../models/connectionRequest");
 const user = require("../models/user");
 const userRouter = express.Router();
 
-USER_SAFE_DATA = "firstName lastName skills about gender age";
+USER_SAFE_DATA = "firstName lastName skills about gender age photoUrl";
 // get all the pending req from the loggedIn user
 userRouter.get("/user/request/received", userAuth, async (req, res) => {
   try {
@@ -55,7 +55,7 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
     const loggedInUser = req.user;
 
     const page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.page) || 10;
+    let limit = parseInt(req.query.limit) || 10;
     limit = limit > 50 ? 50 : limit;
     const skip = (page - 1) * limit;
 
