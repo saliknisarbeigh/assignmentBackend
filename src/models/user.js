@@ -68,6 +68,7 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default:
         "https://static.vecteezy.com/system/resources/thumbnails/005/544/770/small/profile-icon-design-free-vector.jpg",
+
       validate(value) {
         if (!validator.isURL(value)) {
           throw new Error("Photo URL is not valid: " + value);
@@ -76,7 +77,7 @@ const UserSchema = new mongoose.Schema(
     },
     about: {
       type: String,
-      default: "hey there this is a default value",
+      default: "One Pulse, many voices.",
       maxLength: 250,
     },
     skills: {
