@@ -37,9 +37,7 @@ const UserSchema = new mongoose.Schema(
 
       validate(value) {
         if (!validator.isStrongPassword(value)) {
-          throw new Error(
-            "Password is not strong. It must be at least 8 characters long, contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 symbol (e.g., !@#$%^&*)."
-          );
+          throw new Error("Password is not strong. ");
         }
       },
     },
@@ -54,13 +52,6 @@ const UserSchema = new mongoose.Schema(
         values: ["male", "female", "others"],
         message: `{VALUE} is not a valid gender type`,
       },
-      // validate(value) {
-      //   if (!["male", "female", "others"].includes(value)) {
-      //     throw new Error(
-      //       "Gender must be 'male', 'female', or 'others'. Received: " + value
-      //     );
-      //   }
-      // },
     },
     photoUrl: {
       type: String,
