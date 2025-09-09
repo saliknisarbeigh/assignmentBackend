@@ -44,8 +44,18 @@ authRouter.post("/signup", async (req, res) => {
     about,
   });
   try {
-    await user.save();
-    res.status(201).send("User created successfully.");
+    const savedUser = await user.save();
+    const token = await savedUser.getJWT(); //  offload token to mongo schema . UserSchema/userSchema methods  aka helper function will be good choice here/ reusable and clean
+
+    // console.log(token);
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    }); // cookie will expire in 8 hrs
+
+    res.status(200).json({
+      message: "User created successfully.",
+      user: savedUser,
+    });
   } catch (err) {
     res.status(400).send("Signup failed: " + err.message);
   }
