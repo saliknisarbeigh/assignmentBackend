@@ -85,7 +85,7 @@ const UserSchema = new mongoose.Schema(
   }
 );
 UserSchema.index({ firstName: 1, lastName: 1 });
-// TODO write a good expire date for token and cookies
+
 UserSchema.methods.getJWT = async function () {
   const user = this;
   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET || "pulse@511", {
